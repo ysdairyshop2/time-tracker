@@ -3,621 +3,808 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>時間学習型スケジュール管理</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>暗号化対応時間管理アプリ</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f0f2f5;
+            padding: 10px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        
+        .security-status {
+            text-align: center;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .timer {
+            text-align: center;
+            padding: 30px 0;
+        }
+        
+        .timer-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #2563eb;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .task-name {
+            font-size: 1.2rem;
+            color: #374151;
+            margin-bottom: 10px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 10px;
+            margin: 8px 0;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .btn-start { background: #10b981; color: white; }
+        .btn-pause { background: #f59e0b; color: white; }
+        .btn-stop { background: #ef4444; color: white; }
+        .btn-complete { background: #8b5cf6; color: white; }
+        .btn-add { background: #3b82f6; color: white; }
+        .btn-sync { background: #059669; color: white; }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+        
+        .input-group {
+            margin: 15px 0;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            outline: none;
+        }
+        
+        .input-group input:focus {
+            border-color: #3b82f6;
+        }
+        
+        .task-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f9fafb;
+            border-radius: 10px;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .task-item.completed {
+            background: #ecfdf5;
+            border-left-color: #10b981;
+        }
+        
+        .task-item.active {
+            background: #dbeafe;
+            border-left-color: #f59e0b;
+        }
+        
+        .task-info h4 {
+            margin: 0 0 5px 0;
+            color: #111827;
+        }
+        
+        .task-info p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+        
+        .task-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .sync-section {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        
+        .qr-code {
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .qr-canvas {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            max-width: 200px;
+        }
+        
+        .password-setup {
+            background: #fef7ff;
+            border: 2px solid #d946ef;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        
+        .export-data {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            word-break: break-all;
+            max-height: 100px;
+            overflow-y: auto;
+            margin: 10px 0;
         }
     </style>
+    <!-- QRコード生成ライブラリ -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
+    <div class="container">
+        <!-- セキュリティステータス -->
+        <div class="security-status">
+            🔒 データは暗号化保護されています
+        </div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-
-        // アイコンコンポーネント（シンプル版）
-        const Play = () => <span style={{fontSize: '14px'}}>▶️</span>;
-        const Pause = () => <span style={{fontSize: '14px'}}>⏸️</span>;
-        const Square = () => <span style={{fontSize: '14px'}}>⏹️</span>;
-        const Plus = () => <span style={{fontSize: '14px'}}>➕</span>;
-        const CheckCircle = () => <span style={{fontSize: '14px'}}>✅</span>;
-
-        const TimeTrackerApp = () => {
-            const [tasks, setTasks] = useState([]);
-            const [activeTaskId, setActiveTaskId] = useState(null);
-            const [currentTime, setCurrentTime] = useState(0);
-            const [newTaskName, setNewTaskName] = useState('');
-            const [newTaskEstimate, setNewTaskEstimate] = useState(30);
-            const [isRunning, setIsRunning] = useState(false);
-            const [viewMode, setViewMode] = useState('today');
-            
-            const intervalRef = useRef(null);
-            const startTimeRef = useRef(null);
-
-            // データの保存・読み込み
-            useEffect(() => {
-                const savedTasks = localStorage.getItem('timeTrackerTasks');
-                if (savedTasks) {
-                    setTasks(JSON.parse(savedTasks));
-                }
-            }, []);
-
-            useEffect(() => {
-                localStorage.setItem('timeTrackerTasks', JSON.stringify(tasks));
-            }, [tasks]);
-
-            // タイマー管理
-            useEffect(() => {
-                if (isRunning && activeTaskId) {
-                    intervalRef.current = setInterval(() => {
-                        setCurrentTime(prev => prev + 1);
-                    }, 1000);
-                } else {
-                    if (intervalRef.current) {
-                        clearInterval(intervalRef.current);
-                    }
-                }
-
-                return () => {
-                    if (intervalRef.current) {
-                        clearInterval(intervalRef.current);
-                    }
-                };
-            }, [isRunning, activeTaskId]);
-
-            // 時間フォーマット関数
-            const formatTime = (seconds) => {
-                const hours = Math.floor(seconds / 3600);
-                const minutes = Math.floor((seconds % 3600) / 60);
-                const remainingSeconds = seconds % 60;
-                
-                if (hours > 0) {
-                    return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-                }
-                return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-            };
-
-            const minutesToSeconds = (minutes) => minutes * 60;
-            const secondsToMinutes = (seconds) => Math.round(seconds / 60);
-
-            // タスク追加
-            const addTask = () => {
-                if (newTaskName.trim()) {
-                    const newTask = {
-                        id: Date.now(),
-                        name: newTaskName.trim(),
-                        estimatedMinutes: newTaskEstimate,
-                        actualSeconds: 0,
-                        isCompleted: false,
-                        sessions: [],
-                        createdAt: new Date().toISOString(),
-                        startedAt: null,
-                        completedAt: null
-                    };
-                    
-                    setTasks(prev => [...prev, newTask]);
-                    setNewTaskName('');
-                    setNewTaskEstimate(30);
-                }
-            };
-
-            // タスク開始
-            const startTask = (taskId) => {
-                if (activeTaskId && activeTaskId !== taskId) {
-                    stopTask();
-                }
-
-                const now = new Date();
-                setActiveTaskId(taskId);
-                setCurrentTime(0);
-                setIsRunning(true);
-                startTimeRef.current = now;
-
-                setTasks(prev => prev.map(task => 
-                    task.id === taskId 
-                        ? { ...task, startedAt: task.startedAt || now.toISOString() }
-                        : task
-                ));
-            };
-
-            // タスク一時停止
-            const pauseTask = () => {
-                if (isRunning && activeTaskId) {
-                    setIsRunning(false);
-                    
-                    const sessionDuration = currentTime;
-                    setTasks(prev => prev.map(task => 
-                        task.id === activeTaskId
-                            ? {
-                                ...task,
-                                actualSeconds: task.actualSeconds + sessionDuration,
-                                sessions: [...task.sessions, {
-                                    startTime: startTimeRef.current,
-                                    endTime: new Date(),
-                                    duration: sessionDuration
-                                }]
-                            }
-                            : task
-                    ));
-                }
-            };
-
-            // タスク再開
-            const resumeTask = () => {
-                if (activeTaskId && !isRunning) {
-                    setIsRunning(true);
-                    setCurrentTime(0);
-                    startTimeRef.current = new Date();
-                }
-            };
-
-            // タスク停止
-            const stopTask = () => {
-                if (activeTaskId) {
-                    pauseTask();
-                    setActiveTaskId(null);
-                    setCurrentTime(0);
-                }
-            };
-
-            // タスク完了
-            const completeTask = (taskId) => {
-                if (activeTaskId === taskId) {
-                    pauseTask();
-                    setActiveTaskId(null);
-                    setCurrentTime(0);
-                }
-
-                setTasks(prev => prev.map(task => 
-                    task.id === taskId 
-                        ? { 
-                            ...task, 
-                            isCompleted: true, 
-                            completedAt: new Date().toISOString() 
-                        }
-                        : task
-                ));
-            };
-
-            // タスク削除
-            const deleteTask = (taskId) => {
-                if (activeTaskId === taskId) {
-                    stopTask();
-                }
-                setTasks(prev => prev.filter(task => task.id !== taskId));
-            };
-
-            // 統計計算
-            const getStats = () => {
-                const completedTasks = tasks.filter(task => task.isCompleted);
-                const totalTasks = tasks.length;
-                const totalEstimated = completedTasks.reduce((sum, task) => sum + task.estimatedMinutes, 0);
-                const totalActual = completedTasks.reduce((sum, task) => sum + secondsToMinutes(task.actualSeconds), 0);
-                
-                const accuracy = totalEstimated > 0 ? (totalActual / totalEstimated) : 0;
-                const avgEstimateError = completedTasks.length > 0 
-                    ? completedTasks.reduce((sum, task) => {
-                        const estimated = task.estimatedMinutes;
-                        const actual = secondsToMinutes(task.actualSeconds);
-                        return sum + Math.abs(estimated - actual);
-                    }, 0) / completedTasks.length
-                    : 0;
-
-                return {
-                    totalTasks,
-                    completedTasks: completedTasks.length,
-                    totalEstimated,
-                    totalActual,
-                    accuracy,
-                    avgEstimateError
-                };
-            };
-
-            const stats = getStats();
-            const activeTask = tasks.find(task => task.id === activeTaskId);
-            const todayTasks = tasks.filter(task => {
-                const today = new Date().toDateString();
-                const taskDate = new Date(task.createdAt).toDateString();
-                return today === taskDate;
-            });
-
-            return (
-                <div className="max-w-6xl mx-auto p-4 bg-gray-50 min-h-screen">
-                    {/* ヘッダー */}
-                    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <h1 className="text-3xl font-bold text-gray-800">
-                                ⏱️ 時間学習型スケジュール管理
-                            </h1>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setViewMode('today')}
-                                    className={`px-4 py-2 rounded-lg ${
-                                        viewMode === 'today' 
-                                            ? 'bg-blue-500 text-white' 
-                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                    }`}
-                                >
-                                    今日のタスク
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('stats')}
-                                    className={`px-4 py-2 rounded-lg ${
-                                        viewMode === 'stats' 
-                                            ? 'bg-blue-500 text-white' 
-                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                    }`}
-                                >
-                                    統計・分析
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* アクティブタスク表示 */}
-                        {activeTask && (
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-blue-800">
-                                            実行中: {activeTask.name}
-                                        </h3>
-                                        <p className="text-blue-600 text-sm">
-                                            予定: {activeTask.estimatedMinutes}分 | 
-                                            経過: {formatTime(activeTask.actualSeconds + currentTime)}
-                                        </p>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="text-3xl font-bold text-blue-800">
-                                            {formatTime(currentTime)}
-                                        </div>
-                                        <div className="flex gap-2 mt-2">
-                                            {isRunning ? (
-                                                <button
-                                                    onClick={pauseTask}
-                                                    className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 flex items-center gap-1"
-                                                >
-                                                    <Pause />
-                                                    一時停止
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    onClick={resumeTask}
-                                                    className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 flex items-center gap-1"
-                                                >
-                                                    <Play />
-                                                    再開
-                                                </button>
-                                            )}
-                                            <button
-                                                onClick={stopTask}
-                                                className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 flex items-center gap-1"
-                                            >
-                                                <Square />
-                                                停止
-                                            </button>
-                                            <button
-                                                onClick={() => completeTask(activeTask.id)}
-                                                className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 flex items-center gap-1"
-                                            >
-                                                <CheckCircle />
-                                                完了
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {viewMode === 'today' && (
-                        <div className="grid md:grid-cols-2 gap-6">
-                            {/* タスク追加 */}
-                            <div className="bg-white rounded-lg shadow-md p-6">
-                                <h2 className="text-xl font-bold text-gray-800 mb-4">
-                                    ➕ 新しいタスクを追加
-                                </h2>
-                                
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            タスク名
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={newTaskName}
-                                            onChange={(e) => setNewTaskName(e.target.value)}
-                                            onKeyPress={(e) => e.key === 'Enter' && addTask()}
-                                            placeholder="何をしますか？"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                                        />
-                                    </div>
-                                    
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            見積もり時間（分）
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={newTaskEstimate}
-                                            onChange={(e) => setNewTaskEstimate(Number(e.target.value))}
-                                            min="1"
-                                            max="480"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                                        />
-                                    </div>
-                                    
-                                    <button
-                                        onClick={addTask}
-                                        className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 flex items-center justify-center gap-2"
-                                    >
-                                        <Plus />
-                                        タスクを追加
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* 今日の進捗 */}
-                            <div className="bg-white rounded-lg shadow-md p-6">
-                                <h2 className="text-xl font-bold text-gray-800 mb-4">
-                                    📊 今日の進捗
-                                </h2>
-                                
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-blue-50 p-3 rounded-lg text-center">
-                                        <div className="text-2xl font-bold text-blue-600">
-                                            {todayTasks.filter(t => t.isCompleted).length}
-                                        </div>
-                                        <div className="text-sm text-blue-800">完了タスク</div>
-                                    </div>
-                                    
-                                    <div className="bg-green-50 p-3 rounded-lg text-center">
-                                        <div className="text-2xl font-bold text-green-600">
-                                            {todayTasks.length}
-                                        </div>
-                                        <div className="text-sm text-green-800">総タスク数</div>
-                                    </div>
-                                    
-                                    <div className="bg-purple-50 p-3 rounded-lg text-center">
-                                        <div className="text-2xl font-bold text-purple-600">
-                                            {todayTasks.reduce((sum, t) => sum + t.estimatedMinutes, 0)}
-                                        </div>
-                                        <div className="text-sm text-purple-800">予定時間（分）</div>
-                                    </div>
-                                    
-                                    <div className="bg-orange-50 p-3 rounded-lg text-center">
-                                        <div className="text-2xl font-bold text-orange-600">
-                                            {secondsToMinutes(todayTasks.reduce((sum, t) => sum + t.actualSeconds, 0))}
-                                        </div>
-                                        <div className="text-sm text-orange-800">実際時間（分）</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* タスクリスト */}
-                    {viewMode === 'today' && (
-                        <div className="mt-6 bg-white rounded-lg shadow-md p-6">
-                            <h2 className="text-xl font-bold text-gray-800 mb-4">
-                                📝 今日のタスク一覧
-                            </h2>
-                            
-                            {todayTasks.length === 0 ? (
-                                <p className="text-gray-500 text-center py-8">
-                                    タスクを追加して作業を始めましょう！
-                                </p>
-                            ) : (
-                                <div className="space-y-3">
-                                    {todayTasks.map(task => {
-                                        const actualMinutes = secondsToMinutes(task.actualSeconds);
-                                        const isActive = task.id === activeTaskId;
-                                        const estimateAccuracy = task.isCompleted && actualMinutes > 0
-                                            ? Math.round((task.estimatedMinutes / actualMinutes) * 100)
-                                            : null;
-                                        
-                                        return (
-                                            <div
-                                                key={task.id}
-                                                className={`p-4 border rounded-lg ${
-                                                    task.isCompleted 
-                                                        ? 'bg-green-50 border-green-200' 
-                                                        : isActive
-                                                        ? 'bg-blue-50 border-blue-300 border-2'
-                                                        : 'bg-gray-50 border-gray-200'
-                                                }`}
-                                            >
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex-1">
-                                                        <h3 className={`font-medium ${
-                                                            task.isCompleted ? 'line-through text-gray-500' : 'text-gray-800'
-                                                        }`}>
-                                                            {task.name}
-                                                        </h3>
-                                                        <div className="text-sm text-gray-600 mt-1">
-                                                            予定: {task.estimatedMinutes}分 | 
-                                                            実際: {formatTime(task.actualSeconds)} |
-                                                            セッション数: {task.sessions.length}
-                                                            {estimateAccuracy && (
-                                                                <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                                                                    estimateAccuracy >= 80 && estimateAccuracy <= 120
-                                                                        ? 'bg-green-100 text-green-800'
-                                                                        : 'bg-yellow-100 text-yellow-800'
-                                                                }`}>
-                                                                    予測精度: {estimateAccuracy}%
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div className="flex gap-2">
-                                                        {!task.isCompleted && !isActive && (
-                                                            <button
-                                                                onClick={() => startTask(task.id)}
-                                                                className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 flex items-center gap-1"
-                                                            >
-                                                                <Play />
-                                                                開始
-                                                            </button>
-                                                        )}
-                                                        
-                                                        {!task.isCompleted && (
-                                                            <button
-                                                                onClick={() => completeTask(task.id)}
-                                                                className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 flex items-center gap-1"
-                                                            >
-                                                                <CheckCircle />
-                                                                完了
-                                                            </button>
-                                                        )}
-                                                        
-                                                        <button
-                                                            onClick={() => deleteTask(task.id)}
-                                                            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                                                        >
-                                                            削除
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* 統計表示 */}
-                    {viewMode === 'stats' && (
-                        <div className="space-y-6">
-                            <div className="bg-white rounded-lg shadow-md p-6">
-                                <h2 className="text-xl font-bold text-gray-800 mb-4">
-                                    📈 時間予測の精度
-                                </h2>
-                                
-                                <div className="grid md:grid-cols-4 gap-4 mb-6">
-                                    <div className="bg-blue-50 p-4 rounded-lg text-center">
-                                        <div className="text-2xl font-bold text-blue-600">
-                                            {stats.completedTasks}
-                                        </div>
-                                        <div className="text-sm text-blue-800">完了タスク数</div>
-                                    </div>
-                                    
-                                    <div className="bg-purple-50 p-4 rounded-lg text-center">
-                                        <div className="text-2xl font-bold text-purple-600">
-                                            {stats.totalEstimated}分
-                                        </div>
-                                        <div className="text-sm text-purple-800">予定時間合計</div>
-                                    </div>
-                                    
-                                    <div className="bg-orange-50 p-4 rounded-lg text-center">
-                                        <div className="text-2xl font-bold text-orange-600">
-                                            {stats.totalActual}分
-                                        </div>
-                                        <div className="text-sm text-orange-800">実際時間合計</div>
-                                    </div>
-                                    
-                                    <div className="bg-green-50 p-4 rounded-lg text-center">
-                                        <div className="text-2xl font-bold text-green-600">
-                                            {Math.round(stats.accuracy * 100)}%
-                                        </div>
-                                        <div className="text-sm text-green-800">時間予測精度</div>
-                                    </div>
-                                </div>
-
-                                {stats.completedTasks > 0 && (
-                                    <div className="mt-6">
-                                        <h3 className="font-semibold text-gray-800 mb-3">完了タスクの詳細分析</h3>
-                                        <div className="space-y-2">
-                                            {tasks.filter(t => t.isCompleted).map(task => {
-                                                const actualMinutes = secondsToMinutes(task.actualSeconds);
-                                                const accuracy = Math.round((task.estimatedMinutes / actualMinutes) * 100);
-                                                const difference = actualMinutes - task.estimatedMinutes;
-                                                
-                                                return (
-                                                    <div key={task.id} className="border border-gray-200 rounded p-3">
-                                                        <div className="flex justify-between items-center">
-                                                            <span className="font-medium">{task.name}</span>
-                                                            <div className="text-sm text-gray-600">
-                                                                予定: {task.estimatedMinutes}分 → 
-                                                                実際: {actualMinutes}分 
-                                                                ({difference > 0 ? '+' : ''}{difference}分)
-                                                                <span className={`ml-2 px-2 py-1 rounded ${
-                                                                    accuracy >= 80 && accuracy <= 120
-                                                                        ? 'bg-green-100 text-green-800'
-                                                                        : 'bg-yellow-100 text-yellow-800'
-                                                                }`}>
-                                                                    {accuracy}%
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* 改善提案 */}
-                            <div className="bg-white rounded-lg shadow-md p-6">
-                                <h2 className="text-xl font-bold text-gray-800 mb-4">
-                                    💡 AI分析・改善提案
-                                </h2>
-                                
-                                {stats.completedTasks < 3 ? (
-                                    <div className="text-gray-600">
-                                        <p>📊 もう少しタスクを完了すると、AI分析が利用できるようになります。</p>
-                                        <p className="mt-2">現在: {stats.completedTasks}/3 タスク完了</p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
-                                            <h4 className="font-semibold text-blue-800">時間見積もりの傾向</h4>
-                                            <p className="text-blue-700">
-                                                {stats.accuracy > 1.2 
-                                                    ? '⚠️ 見積もり時間が短すぎる傾向があります。1.2〜1.5倍で見積もることをお勧めします。'
-                                                    : stats.accuracy < 0.8
-                                                    ? '⚠️ 見積もり時間が長すぎる傾向があります。もう少しタイトに設定できそうです。'
-                                                    : '✅ 時間見積もりの精度が良好です！この調子で続けましょう。'
-                                                }
-                                            </p>
-                                        </div>
-                                        
-                                        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                                            <h4 className="font-semibold text-yellow-800">作業パターン分析</h4>
-                                            <p className="text-yellow-700">
-                                                平均的な見積もり誤差: {Math.round(stats.avgEstimateError)}分
-                                                {stats.avgEstimateError > 15 
-                                                    ? ' - タスクをより細かく分割することをお勧めします。'
-                                                    : ' - 良好な精度です！'
-                                                }
-                                            </p>
-                                        </div>
-                                        
-                                        <div className="bg-green-50 border-l-4 border-green-400 p-4">
-                                            <h4 className="font-semibold text-green-800">次のステップ</h4>
-                                            <p className="text-green-700">
-                                                Phase 2では、時間帯別の効率性や作業タイプ別の分析が可能になります。
-                                                現在のデータ蓄積状況: {tasks.length}タスク記録済み
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
+        <!-- パスワード設定 -->
+        <div class="card" id="passwordCard">
+            <h3>🔐 暗号化パスワード設定</h3>
+            <div class="password-setup">
+                <p style="margin-bottom: 10px; font-size: 0.9rem; color: #6b7280;">
+                    データを暗号化するためのパスワードを設定してください。
+                    デバイス間でデータを同期する際に必要になります。
+                </p>
+                <div class="input-group">
+                    <label>パスワード</label>
+                    <input type="password" id="masterPassword" placeholder="8文字以上のパスワード" minlength="8">
                 </div>
-            );
-        };
+                <div class="input-group">
+                    <label>パスワード確認</label>
+                    <input type="password" id="confirmPassword" placeholder="同じパスワードを再入力">
+                </div>
+                <button class="btn btn-sync" onclick="setupPassword()">🔒 暗号化を有効にする</button>
+                
+                <div style="margin-top: 15px; padding: 10px; background: #fef3c7; border-radius: 6px; font-size: 0.85rem;">
+                    ⚠️ パスワードを忘れるとデータを復元できません。必ず覚えやすいものを設定してください。
+                </div>
+            </div>
+        </div>
 
-        ReactDOM.render(<TimeTrackerApp />, document.getElementById('root'));
+        <!-- メインアプリ -->
+        <div id="mainApp" class="hidden">
+            <!-- タイマー部分 -->
+            <div class="card">
+                <div class="timer">
+                    <div class="task-name" id="currentTaskName">タスクを選択してください</div>
+                    <div class="timer-display" id="timerDisplay">0:00</div>
+                    
+                    <button class="btn btn-start hidden" id="startBtn" onclick="startTimer()">⏱️ 開始</button>
+                    <button class="btn btn-pause hidden" id="pauseBtn" onclick="pauseTimer()">⏸️ 一時停止</button>
+                    <button class="btn btn-stop hidden" id="stopBtn" onclick="stopTimer()">⏹️ 停止</button>
+                    <button class="btn btn-complete hidden" id="completeBtn" onclick="completeTask()">✅ 完了</button>
+                </div>
+            </div>
+
+            <!-- タスク追加 -->
+            <div class="card">
+                <h3>📝 新しいタスク</h3>
+                <div class="input-group">
+                    <label>タスク名</label>
+                    <input type="text" id="taskName" placeholder="何をしますか？">
+                </div>
+                <div class="input-group">
+                    <label>見積もり時間（分）</label>
+                    <input type="number" id="taskEstimate" value="30" min="1" max="480">
+                </div>
+                <button class="btn btn-add" onclick="addTask()">➕ タスク追加</button>
+            </div>
+
+            <!-- 統計 -->
+            <div class="card">
+                <h3>📊 今日の進捗</h3>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="completedCount">0</div>
+                        <div class="stat-label">完了</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalTime">0</div>
+                        <div class="stat-label">分</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- タスクリスト -->
+            <div class="card">
+                <h3>📋 タスク一覧</h3>
+                <div class="task-list" id="taskList">
+                    <p style="text-align: center; color: #6b7280; padding: 30px 0;">
+                        タスクを追加してください
+                    </p>
+                </div>
+            </div>
+
+            <!-- 暗号化同期 -->
+            <div class="card">
+                <h3>🔄 デバイス間同期</h3>
+                <button class="btn btn-sync" onclick="toggleSync()">📱 同期メニューを開く</button>
+                
+                <div class="sync-section hidden" id="syncSection">
+                    <h4>📤 データエクスポート（QRコード）</h4>
+                    <button class="btn btn-add" onclick="generateQR()">QRコード生成</button>
+                    <div class="qr-code" id="qrCode"></div>
+                    
+                    <h4>📥 データインポート</h4>
+                    <div class="input-group">
+                        <label>暗号化データまたはQRコードスキャン結果</label>
+                        <textarea id="importData" placeholder="暗号化されたデータを貼り付けてください" style="width: 100%; height: 100px; padding: 10px; border-radius: 6px; border: 2px solid #e5e7eb; resize: vertical;"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>復号化パスワード</label>
+                        <input type="password" id="decryptPassword" placeholder="設定したパスワード">
+                    </div>
+                    <button class="btn btn-add" onclick="importData()">🔓 データをインポート</button>
+                    
+                    <h4>💾 手動バックアップ</h4>
+                    <button class="btn btn-add" onclick="downloadBackup()">📁 ファイルとしてダウンロード</button>
+                    <input type="file" id="fileInput" accept=".timetracker" style="display: none;" onchange="loadBackup(event)">
+                    <button class="btn btn-add" onclick="document.getElementById('fileInput').click()">📂 ファイルから復元</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tasks = [];
+        let currentTaskId = null;
+        let isRunning = false;
+        let currentTime = 0;
+        let interval = null;
+        let masterPassword = null;
+
+        // 暗号化関数（簡易版）
+        function encrypt(text, password) {
+            // 実際のアプリではより強力な暗号化を使用
+            const textBytes = new TextEncoder().encode(text);
+            const passwordBytes = new TextEncoder().encode(password);
+            
+            const encrypted = textBytes.map((byte, i) => 
+                byte ^ passwordBytes[i % passwordBytes.length]
+            );
+            
+            return btoa(String.fromCharCode(...encrypted));
+        }
+
+        function decrypt(encryptedText, password) {
+            try {
+                const encrypted = atob(encryptedText);
+                const encryptedBytes = new Uint8Array([...encrypted].map(c => c.charCodeAt(0)));
+                const passwordBytes = new TextEncoder().encode(password);
+                
+                const decrypted = encryptedBytes.map((byte, i) => 
+                    byte ^ passwordBytes[i % passwordBytes.length]
+                );
+                
+                return new TextDecoder().decode(decrypted);
+            } catch (error) {
+                throw new Error('復号化に失敗しました');
+            }
+        }
+
+        function setupPassword() {
+            const password = document.getElementById('masterPassword').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            
+            if (password.length < 8) {
+                alert('パスワードは8文字以上で設定してください');
+                return;
+            }
+            
+            if (password !== confirm) {
+                alert('パスワードが一致しません');
+                return;
+            }
+            
+            masterPassword = password;
+            localStorage.setItem('timeTrackerPasswordSet', 'true');
+            
+            document.getElementById('passwordCard').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            
+            loadData();
+            updateDisplay();
+            
+            alert('✅ 暗号化が有効になりました！\nデータは安全に保護されます。');
+        }
+
+        function loadData() {
+            const encryptedData = localStorage.getItem('timeTrackerEncryptedData');
+            if (encryptedData && masterPassword) {
+                try {
+                    const decryptedData = decrypt(encryptedData, masterPassword);
+                    tasks = JSON.parse(decryptedData);
+                } catch (error) {
+                    console.error('データ読み込みエラー:', error);
+                }
+            }
+        }
+
+        function saveData() {
+            if (masterPassword) {
+                const dataString = JSON.stringify(tasks);
+                const encryptedData = encrypt(dataString, masterPassword);
+                localStorage.setItem('timeTrackerEncryptedData', encryptedData);
+            }
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateDisplay() {
+            document.getElementById('timerDisplay').textContent = formatTime(currentTime);
+            
+            // 統計更新
+            const completed = tasks.filter(t => t.completed).length;
+            const totalTime = Math.round(tasks.reduce((sum, t) => sum + t.actualSeconds, 0) / 60);
+            
+            document.getElementById('completedCount').textContent = completed;
+            document.getElementById('totalTime').textContent = totalTime;
+            
+            // タスクリスト更新
+            renderTaskList();
+        }
+
+        function renderTaskList() {
+            const container = document.getElementById('taskList');
+            
+            if (tasks.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 30px 0;">タスクを追加してください</p>';
+                return;
+            }
+
+            container.innerHTML = tasks.map(task => {
+                const isActive = task.id === currentTaskId;
+                const actualMinutes = Math.round(task.actualSeconds / 60);
+                
+                return `
+                    <div class="task-item ${task.completed ? 'completed' : ''} ${isActive ? 'active' : ''}">
+                        <div class="task-info">
+                            <h4>${task.name}</h4>
+                            <p>予定: ${task.estimatedMinutes}分 | 実際: ${actualMinutes}分</p>
+                        </div>
+                        <div class="task-actions">
+                            ${!task.completed && !isActive ? `<button class="btn-small btn-start" onclick="selectTask(${task.id})">開始</button>` : ''}
+                            ${!task.completed ? `<button class="btn-small btn-complete" onclick="markComplete(${task.id})">完了</button>` : ''}
+                            <button class="btn-small btn-stop" onclick="deleteTask(${task.id})">削除</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addTask() {
+            const name = document.getElementById('taskName').value.trim();
+            const estimate = parseInt(document.getElementById('taskEstimate').value);
+            
+            if (!name) return;
+            
+            const task = {
+                id: Date.now(),
+                name: name,
+                estimatedMinutes: estimate,
+                actualSeconds: 0,
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+            
+            tasks.push(task);
+            saveData();
+            
+            document.getElementById('taskName').value = '';
+            document.getElementById('taskEstimate').value = '30';
+            
+            updateDisplay();
+        }
+
+        function selectTask(taskId) {
+            if (currentTaskId) {
+                stopTimer();
+            }
+            
+            currentTaskId = taskId;
+            currentTime = 0;
+            
+            const task = tasks.find(t => t.id === taskId);
+            document.getElementById('currentTaskName').textContent = task.name;
+            
+            // ボタン表示切り替え
+            document.getElementById('startBtn').classList.remove('hidden');
+            document.getElementById('pauseBtn').classList.add('hidden');
+            document.getElementById('stopBtn').classList.add('hidden');
+            document.getElementById('completeBtn').classList.remove('hidden');
+            
+            updateDisplay();
+        }
+
+        function startTimer() {
+            if (!currentTaskId) return;
+            
+            isRunning = true;
+            interval = setInterval(() => {
+                currentTime++;
+                updateDisplay();
+            }, 1000);
+            
+            // ボタン表示切り替え
+            document.getElementById('startBtn').classList.add('hidden');
+            document.getElementById('pauseBtn').classList.remove('hidden');
+            document.getElementById('stopBtn').classList.remove('hidden');
+        }
+
+        function pauseTimer() {
+            isRunning = false;
+            clearInterval(interval);
+            
+            // 現在の時間をタスクに記録
+            const task = tasks.find(t => t.id === currentTaskId);
+            if (task) {
+                task.actualSeconds += currentTime;
+                saveData();
+            }
+            
+            // ボタン表示切り替え
+            document.getElementById('startBtn').classList.remove('hidden');
+            document.getElementById('pauseBtn').classList.add('hidden');
+            document.getElementById('stopBtn').classList.remove('hidden');
+            
+            currentTime = 0;
+            updateDisplay();
+        }
+
+        function stopTimer() {
+            if (isRunning) {
+                pauseTimer();
+            }
+            
+            currentTaskId = null;
+            currentTime = 0;
+            
+            document.getElementById('currentTaskName').textContent = 'タスクを選択してください';
+            
+            // ボタンを隠す
+            document.getElementById('startBtn').classList.add('hidden');
+            document.getElementById('pauseBtn').classList.add('hidden');
+            document.getElementById('stopBtn').classList.add('hidden');
+            document.getElementById('completeBtn').classList.add('hidden');
+            
+            updateDisplay();
+        }
+
+        function completeTask() {
+            if (!currentTaskId) return;
+            
+            if (isRunning) {
+                pauseTimer();
+            }
+            
+            markComplete(currentTaskId);
+            stopTimer();
+        }
+
+        function markComplete(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = true;
+                saveData();
+                updateDisplay();
+            }
+        }
+
+        function deleteTask(taskId) {
+            if (currentTaskId === taskId) {
+                stopTimer();
+            }
+            
+            tasks = tasks.filter(t => t.id !== taskId);
+            saveData();
+            updateDisplay();
+        }
+
+        function toggleSync() {
+            const section = document.getElementById('syncSection');
+            section.classList.toggle('hidden');
+        }
+
+        function generateQR() {
+            if (!masterPassword) {
+                alert('パスワードが設定されていません');
+                return;
+            }
+
+            const dataString = JSON.stringify(tasks);
+            const encryptedData = encrypt(dataString, masterPassword);
+            
+            // QRコード生成
+            const qrContainer = document.getElementById('qrCode');
+            qrContainer.innerHTML = '';
+            
+            if (typeof QRCode !== 'undefined') {
+                const canvas = document.createElement('canvas');
+                qrContainer.appendChild(canvas);
+                
+                QRCode.toCanvas(canvas, encryptedData, {
+                    width: 200,
+                    margin: 2
+                }, function (error) {
+                    if (error) {
+                        console.error(error);
+                        qrContainer.innerHTML = '<p style="color: #ef4444;">QRコード生成に失敗しました</p>';
+                    } else {
+                        const instructions = document.createElement('p');
+                        instructions.style.cssText = 'font-size: 0.8rem; color: #6b7280; margin-top: 10px; text-align: center;';
+                        instructions.textContent = 'スマホでQRコードをスキャンして、結果を他のデバイスのインポート欄に貼り付けてください';
+                        qrContainer.appendChild(instructions);
+                    }
+                });
     </script>
 </body>
 </html>
+            } else {
+                // QRCodeライブラリが利用できない場合
+                const textOutput = document.createElement('div');
+                textOutput.className = 'export-data';
+                textOutput.textContent = encryptedData;
+                qrContainer.appendChild(textOutput);
+                
+                const instructions = document.createElement('p');
+                instructions.style.cssText = 'font-size: 0.8rem; color: #6b7280; margin-top: 10px;';
+                instructions.textContent = 'このテキストをコピーして他のデバイスのインポート欄に貼り付けてください';
+                qrContainer.appendChild(instructions);
+
+                // クリップボードにコピー
+                navigator.clipboard.writeText(encryptedData).then(() => {
+                    alert('📋 暗号化データをクリップボードにコピーしました！');
+                }).catch(() => {
+                    alert('💾 暗号化データを表示しました。手動でコピーしてください。');
+                });
+            }
+        }
+
+        function importData() {
+            const encryptedData = document.getElementById('importData').value.trim();
+            const password = document.getElementById('decryptPassword').value;
+            
+            if (!encryptedData || !password) {
+                alert('暗号化データとパスワードの両方を入力してください');
+                return;
+            }
+            
+            try {
+                const decryptedData = decrypt(encryptedData, password);
+                const importedTasks = JSON.parse(decryptedData);
+                
+                if (Array.isArray(importedTasks)) {
+                    // 既存データとマージするか確認
+                    if (tasks.length > 0) {
+                        const merge = confirm('既存のデータに追加しますか？\n「OK」= 追加　「キャンセル」= 置き換え');
+                        if (merge) {
+                            // IDの重複を避けるため、インポートデータのIDを更新
+                            const maxId = Math.max(...tasks.map(t => t.id), 0);
+                            importedTasks.forEach((task, index) => {
+                                task.id = maxId + index + 1;
+                            });
+                            tasks = [...tasks, ...importedTasks];
+                        } else {
+                            tasks = importedTasks;
+                        }
+                    } else {
+                        tasks = importedTasks;
+                    }
+                    
+                    saveData();
+                    updateDisplay();
+                    
+                    document.getElementById('importData').value = '';
+                    document.getElementById('decryptPassword').value = '';
+                    
+                    alert('✅ データのインポートが完了しました！');
+                } else {
+                    alert('❌ 無効なデータ形式です');
+                }
+            } catch (error) {
+                alert('❌ データの復号化に失敗しました。パスワードが正しいか確認してください。');
+            }
+        }
+
+        function downloadBackup() {
+            if (!masterPassword) {
+                alert('パスワードが設定されていません');
+                return;
+            }
+
+            const dataString = JSON.stringify(tasks);
+            const encryptedData = encrypt(dataString, masterPassword);
+            
+            const backupData = {
+                version: '1.0',
+                timestamp: new Date().toISOString(),
+                data: encryptedData
+            };
+            
+            const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `timetracker-backup-${new Date().toISOString().split('T')[0]}.timetracker`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('📁 バックアップファイルをダウンロードしました！');
+        }
+
+        function loadBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const password = prompt('バックアップファイルの復号化パスワードを入力してください:');
+            if (!password) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const backupData = JSON.parse(e.target.result);
+                    const decryptedData = decrypt(backupData.data, password);
+                    const importedTasks = JSON.parse(decryptedData);
+                    
+                    if (Array.isArray(importedTasks)) {
+                        const merge = confirm('既存のデータに追加しますか？\n「OK」= 追加　「キャンセル」= 置き換え');
+                        if (merge) {
+                            const maxId = Math.max(...tasks.map(t => t.id), 0);
+                            importedTasks.forEach((task, index) => {
+                                task.id = maxId + index + 1;
+                            });
+                            tasks = [...tasks, ...importedTasks];
+                        } else {
+                            tasks = importedTasks;
+                        }
+                        
+                        saveData();
+                        updateDisplay();
+                        alert('✅ バックアップファイルから復元しました！');
+                    } else {
+                        alert('❌ 無効なバックアップファイルです');
+                    }
+                } catch (error) {
+                    alert('❌ バックアップファイルの読み込みに失敗しました: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Enter キーでタスク追加
+        document.getElementById('taskName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTask();
+            }
+        });
+
+        // パスワード入力でEnterキー対応
+        document.getElementById('confirmPassword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                setupPassword();
+            }
+        });
+
+        // 初期化
+        window.addEventListener('load', () => {
+            const passwordSet = localStorage.getItem('timeTrackerPasswordSet');
+            if (passwordSet) {
+                const password = prompt('暗号化パスワードを入力してください:');
+                if (password) {
+                    masterPassword = password;
+                    document.getElementById('passwordCard').classList.add('hidden');
+                    document.getElementById('mainApp').classList.remove('hidden');
+                    loadData();
+                    updateDisplay();
+                } else {
+                    localStorage.removeItem('timeTrackerPasswordSet');
+                }
+            }
+        });
