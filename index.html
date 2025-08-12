@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>暗号化対応時間管理アプリ</title>
+    <title>振り返り機能付き時間管理アプリ</title>
     <style>
         * {
             margin: 0;
@@ -95,16 +95,17 @@
             color: #374151;
         }
         
-        .input-group input {
+        .input-group input, .input-group textarea {
             width: 100%;
             padding: 12px;
             font-size: 1rem;
             border: 2px solid #e5e7eb;
             border-radius: 8px;
             outline: none;
+            font-family: inherit;
         }
         
-        .input-group input:focus {
+        .input-group input:focus, .input-group textarea:focus {
             border-color: #3b82f6;
         }
         
@@ -309,13 +310,13 @@
                 
                 <div class="sync-section hidden" id="reviewSection">
                     <h4>✅ 今日できたこと</h4>
-                    <textarea id="todayAccomplishments" placeholder="今日完了したタスクや成果を記入してください..." style="width: 100%; height: 80px; padding: 10px; border-radius: 6px; border: 2px solid #e5e7eb; resize: vertical; margin-bottom: 15px;"></textarea>
+                    <textarea id="todayAccomplishments" placeholder="今日完了したタスクや成果を記入してください..." style="height: 80px; resize: vertical; margin-bottom: 15px;"></textarea>
                     
                     <h4>❌ 今日できなかったこと</h4>
-                    <textarea id="todayIncomplete" placeholder="未完了のタスクや課題を記入してください..." style="width: 100%; height: 80px; padding: 10px; border-radius: 6px; border: 2px solid #e5e7eb; resize: vertical; margin-bottom: 15px;"></textarea>
+                    <textarea id="todayIncomplete" placeholder="未完了のタスクや課題を記入してください..." style="height: 80px; resize: vertical; margin-bottom: 15px;"></textarea>
                     
                     <h4>💭 気づいたこと・改善点</h4>
-                    <textarea id="todayInsights" placeholder="今日の作業で気づいたことや改善したい点を記入してください..." style="width: 100%; height: 80px; padding: 10px; border-radius: 6px; border: 2px solid #e5e7eb; resize: vertical; margin-bottom: 15px;"></textarea>
+                    <textarea id="todayInsights" placeholder="今日の作業で気づいたことや改善したい点を記入してください..." style="height: 80px; resize: vertical; margin-bottom: 15px;"></textarea>
                     
                     <button class="btn btn-complete" onclick="generateTomorrowTasks()">🤖 明日のタスクを自動生成</button>
                     
@@ -340,7 +341,7 @@
                     <h4>📥 データインポート</h4>
                     <div class="input-group">
                         <label>暗号化データ</label>
-                        <textarea id="importData" placeholder="暗号化されたデータを貼り付けてください" style="width: 100%; height: 100px; padding: 10px; border-radius: 6px; border: 2px solid #e5e7eb; resize: vertical;"></textarea>
+                        <textarea id="importData" placeholder="暗号化されたデータを貼り付けてください" style="height: 100px; resize: vertical;"></textarea>
                     </div>
                     <div class="input-group">
                         <label>復号化パスワード</label>
@@ -364,10 +365,10 @@
         let currentTime = 0;
         let interval = null;
         let masterPassword = null;
-        let dailyReviews = []; // 日次振り返りデータ
-        let suggestedTasks = []; // 提案されたタスク
+        let dailyReviews = [];
+        let suggestedTasks = [];
 
-        // 暗号化関数（簡易版）
+        // 暗号化関数
         function encrypt(text, password) {
             const textBytes = new TextEncoder().encode(text);
             const passwordBytes = new TextEncoder().encode(password);
@@ -458,14 +459,12 @@
         function updateDisplay() {
             document.getElementById('timerDisplay').textContent = formatTime(currentTime);
             
-            // 統計更新
             const completed = tasks.filter(t => t.completed).length;
             const totalTime = Math.round(tasks.reduce((sum, t) => sum + t.actualSeconds, 0) / 60);
             
             document.getElementById('completedCount').textContent = completed;
             document.getElementById('totalTime').textContent = totalTime;
             
-            // タスクリスト更新
             renderTaskList();
         }
 
@@ -532,7 +531,6 @@
             const task = tasks.find(t => t.id === taskId);
             document.getElementById('currentTaskName').textContent = task.name;
             
-            // ボタン表示切り替え
             document.getElementById('startBtn').classList.remove('hidden');
             document.getElementById('pauseBtn').classList.add('hidden');
             document.getElementById('stopBtn').classList.add('hidden');
@@ -550,7 +548,6 @@
                 updateDisplay();
             }, 1000);
             
-            // ボタン表示切り替え
             document.getElementById('startBtn').classList.add('hidden');
             document.getElementById('pauseBtn').classList.remove('hidden');
             document.getElementById('stopBtn').classList.remove('hidden');
@@ -560,14 +557,12 @@
             isRunning = false;
             clearInterval(interval);
             
-            // 現在の時間をタスクに記録
             const task = tasks.find(t => t.id === currentTaskId);
             if (task) {
                 task.actualSeconds += currentTime;
                 saveData();
             }
             
-            // ボタン表示切り替え
             document.getElementById('startBtn').classList.remove('hidden');
             document.getElementById('pauseBtn').classList.add('hidden');
             document.getElementById('stopBtn').classList.remove('hidden');
@@ -586,7 +581,6 @@
             
             document.getElementById('currentTaskName').textContent = 'タスクを選択してください';
             
-            // ボタンを隠す
             document.getElementById('startBtn').classList.add('hidden');
             document.getElementById('pauseBtn').classList.add('hidden');
             document.getElementById('stopBtn').classList.add('hidden');
@@ -625,17 +619,11 @@
             updateDisplay();
         }
 
-        function toggleSync() {
-            const section = document.getElementById('syncSection');
-            section.classList.toggle('hidden');
-        }
-
         function toggleReview() {
             const section = document.getElementById('reviewSection');
             section.classList.toggle('hidden');
             
             if (!section.classList.contains('hidden')) {
-                // 振り返りセクションを開いた時に今日の情報を自動入力
                 populateTodayReview();
             }
         }
@@ -650,7 +638,6 @@
             const completedTasks = todayTasks.filter(t => t.completed);
             const incompleteTasks = todayTasks.filter(t => !t.completed);
 
-            // 完了タスクを自動入力
             let accomplishmentsText = '';
             if (completedTasks.length > 0) {
                 accomplishmentsText = completedTasks.map(task => {
@@ -660,7 +647,6 @@
                 }).join('\n');
             }
 
-            // 未完了タスクを自動入力
             let incompleteText = '';
             if (incompleteTasks.length > 0) {
                 incompleteText = incompleteTasks.map(task => {
@@ -678,7 +664,6 @@
             const incomplete = document.getElementById('todayIncomplete').value;
             const insights = document.getElementById('todayInsights').value;
 
-            // 今日の振り返りを保存
             const todayReview = {
                 date: new Date().toISOString().split('T')[0],
                 accomplishments: accomplishments,
@@ -692,10 +677,7 @@
             dailyReviews.push(todayReview);
             saveData();
 
-            // AI的な提案生成
             const suggestions = generateSmartSuggestions(todayReview);
-            
-            // 提案を表示
             displaySuggestions(suggestions);
         }
 
@@ -710,7 +692,7 @@
             const completedTasks = todayTasks.filter(t => t.completed);
             const incompleteTasks = todayTasks.filter(t => !t.completed);
 
-            // 1. 未完了タスクの継続
+            // 未完了タスクの継続
             incompleteTasks.forEach(task => {
                 const actualMinutes = Math.round(task.actualSeconds / 60);
                 const estimatedRemaining = Math.max(task.estimatedMinutes - actualMinutes, 15);
@@ -724,13 +706,13 @@
                 });
             });
 
-            // 2. 効率が悪かったタスクの改善版
+            // 効率改善提案
             completedTasks.forEach(task => {
                 const actualMinutes = Math.round(task.actualSeconds / 60);
                 const efficiency = task.estimatedMinutes > 0 ? (task.estimatedMinutes / actualMinutes) : 1;
                 
-                if (efficiency < 0.7) { // 予想より70%以上時間がかかった場合
-                    const improvedEstimate = Math.round(actualMinutes * 1.2); // 20%マージンを追加
+                if (efficiency < 0.7) {
+                    const improvedEstimate = Math.round(actualMinutes * 1.2);
                     suggestions.push({
                         task: `${task.name}の改善・見直し`,
                         estimatedMinutes: improvedEstimate,
@@ -741,7 +723,7 @@
                 }
             });
 
-            // 3. 振り返り内容からの提案
+            // 振り返り内容からの提案
             const insightsLower = todayReview.insights.toLowerCase();
             
             if (insightsLower.includes('時間') || insightsLower.includes('遅れ')) {
@@ -764,17 +746,7 @@
                 });
             }
 
-            if (insightsLower.includes('準備') || insightsLower.includes('計画')) {
-                suggestions.push({
-                    task: '明日のタスクの詳細計画立案',
-                    estimatedMinutes: 25,
-                    reason: '事前準備の重要性が認識されたため',
-                    priority: 'high',
-                    type: 'planning'
-                });
-            }
-
-            // 4. 定期的な振り返りタスク
+            // 定期振り返り
             suggestions.push({
                 task: '今日の振り返りと明日の計画',
                 estimatedMinutes: 15,
@@ -783,28 +755,11 @@
                 type: 'routine'
             });
 
-            // 5. 過去の傾向からの提案
-            if (dailyReviews.length >= 3) {
-                const recentReviews = dailyReviews.slice(-3);
-                const avgCompletionRate = recentReviews.reduce((sum, review) => 
-                    sum + (review.tasksCompleted / review.tasksTotal), 0) / recentReviews.length;
-
-                if (avgCompletionRate < 0.7) {
-                    suggestions.push({
-                        task: 'タスク量の適正化検討',
-                        estimatedMinutes: 20,
-                        reason: `最近の完了率が${Math.round(avgCompletionRate * 100)}%と低めのため`,
-                        priority: 'high',
-                        type: 'optimization'
-                    });
-                }
-            }
-
             // 優先度順にソート
             const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
             suggestions.sort((a, b) => priorityOrder[b.priority] - priorityOrder[a.priority]);
 
-            return suggestions.slice(0, 6); // 最大6個の提案
+            return suggestions.slice(0, 5);
         }
 
         function displaySuggestions(suggestions) {
@@ -860,7 +815,7 @@
                 const checkbox = document.getElementById(`suggestion-${index}`);
                 if (checkbox && checkbox.checked) {
                     const newTask = {
-                        id: Date.now() + index, // 重複回避
+                        id: Date.now() + index,
                         name: suggestion.task,
                         estimatedMinutes: suggestion.estimatedMinutes,
                         actualSeconds: 0,
@@ -880,17 +835,20 @@
                 updateDisplay();
                 alert(`✅ ${addedCount}個のタスクを追加しました！`);
                 
-                // 振り返りセクションを閉じる
                 document.getElementById('reviewSection').classList.add('hidden');
                 document.getElementById('tomorrowSuggestions').classList.add('hidden');
                 
-                // 入力フィールドをクリア
                 document.getElementById('todayAccomplishments').value = '';
                 document.getElementById('todayIncomplete').value = '';
                 document.getElementById('todayInsights').value = '';
             } else {
                 alert('追加するタスクを選択してください');
             }
+        }
+
+        function toggleSync() {
+            const section = document.getElementById('syncSection');
+            section.classList.toggle('hidden');
         }
 
         function exportData() {
@@ -906,12 +864,10 @@
             const dataString = JSON.stringify(dataToExport);
             const encryptedData = encrypt(dataString, masterPassword);
             
-            // 結果を表示
             const exportContainer = document.getElementById('exportData');
             exportContainer.textContent = encryptedData;
             exportContainer.classList.remove('hidden');
             
-            // クリップボードにコピー
             navigator.clipboard.writeText(encryptedData).then(() => {
                 alert('📋 暗号化データをクリップボードにコピーしました！\n他のデバイスのインポート欄に貼り付けてください。');
             }).catch(() => {
@@ -932,25 +888,20 @@
                 const decryptedData = decrypt(encryptedData, password);
                 const importedData = JSON.parse(decryptedData);
                 
-                // 新しいデータ形式に対応
                 let importedTasks = [];
                 let importedReviews = [];
                 
                 if (Array.isArray(importedData)) {
-                    // 旧形式（タスクのみ）
                     importedTasks = importedData;
                 } else {
-                    // 新形式（タスク + 振り返り）
                     importedTasks = importedData.tasks || [];
                     importedReviews = importedData.dailyReviews || [];
                 }
                 
                 if (Array.isArray(importedTasks)) {
-                    // 既存データとマージするか確認
                     if (tasks.length > 0 || dailyReviews.length > 0) {
                         const merge = confirm('既存のデータに追加しますか？\n「OK」= 追加　「キャンセル」= 置き換え');
                         if (merge) {
-                            // IDの重複を避けるため、インポートデータのIDを更新
                             const maxId = Math.max(...tasks.map(t => t.id), 0);
                             importedTasks.forEach((task, index) => {
                                 task.id = maxId + index + 1;
@@ -1069,65 +1020,20 @@
             };
             reader.readAsText(file);
         }
-                try {
-                    const backupData = JSON.parse(e.target.result);
-                    const decryptedData = decrypt(backupData.data, password);
-                    const importedData = JSON.parse(decryptedData);
-                    
-                    let importedTasks = [];
-                    let importedReviews = [];
-                    
-                    if (Array.isArray(importedData)) {
-                        importedTasks = importedData;
-                    } else {
-                        importedTasks = importedData.tasks || [];
-                        importedReviews = importedData.dailyReviews || [];
-                    }
-                    
-                    if (Array.isArray(importedTasks)) {
-                        if (tasks.length > 0 || dailyReviews.length > 0) {
-                            const merge = confirm('既存のデータに追加しますか？\n「OK」= 追加　「キャンセル」= 置き換え');
-                            if (merge) {
-                                const maxId = Math.max(...tasks.map(t => t.id), 0);
-                                importedTasks.forEach((task, index) => {
-                                    task.id = maxId + index + 1;
-                                });
-                                tasks = [...tasks, ...importedTasks];
-                                dailyReviews = [...dailyReviews, ...importedReviews];
-                            } else {
-                                tasks = importedTasks;
-                                dailyReviews = importedReviews;
-                            }
-                        } else {
-                            tasks = importedTasks;
-                            dailyReviews = importedReviews;
-                        }
-                        
-                        saveData();
-                        updateDisplay();
-                        alert('✅ バックアップファイルから復元しました！');
-                    } else {
-                        alert('❌ 無効なバックアップファイルです');
-                    }
-                } catch (error) {
-                    alert('❌ バックアップファイルの読み込みに失敗しました: ' + error.message);
+
+        // Enter キー対応
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('taskName').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addTask();
                 }
-            };
-            reader.readAsText(file);
-        }
+            });
 
-        // Enter キーでタスク追加
-        document.getElementById('taskName').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                addTask();
-            }
-        });
-
-        // パスワード入力でEnterキー対応
-        document.getElementById('confirmPassword').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                setupPassword();
-            }
+            document.getElementById('confirmPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    setupPassword();
+                }
+            });
         });
 
         // 初期化
@@ -1148,4 +1054,4 @@
         });
     </script>
 </body>
-</html>
+</html> 
